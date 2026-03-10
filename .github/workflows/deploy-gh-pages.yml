@@ -27,16 +27,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-<<<<<<< codex/fix-website-element-display-issue-01aari
 
       - name: Install dependencies
         run: npm install
-=======
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
->>>>>>> main
 
       - name: Build
         run: npm run build
