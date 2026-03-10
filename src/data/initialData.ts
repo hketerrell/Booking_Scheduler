@@ -1,7 +1,5 @@
 import { BookingState, DateSlot, DateTimeSlot, Scheduler, SchedulerConfig } from '../types';
 
-export const STORAGE_KEY = 'booking-scheduler-data';
-
 const padTime = (value: number) => value.toString().padStart(2, '0');
 
 const parseTimeToMinutes = (time: string) => {
@@ -21,7 +19,7 @@ const generateBaseTimeSlots = (config: SchedulerConfig) => {
   const endMinutes = parseTimeToMinutes(config.endTime);
   const duration = config.slotDurationMinutes;
 
-  for (let current = startMinutes; current + duration <= endMinutes; current += duration) {  
+  for (let current = startMinutes; current + duration <= endMinutes; current += duration) {
     const start = formatMinutesToTime(current);
     const end = formatMinutesToTime(current + duration);
     slots.push({ start, end, label: `${start} - ${end}` });
@@ -162,7 +160,6 @@ const normalizeScheduler = (scheduler: Scheduler): Scheduler => {
   };
 };
 
-
 const sanitizeScheduler = (rawScheduler: Partial<Scheduler>): Scheduler => {
   const defaultConfig = buildDefaultConfig();
   const rawConfig = (rawScheduler as any).config as Partial<SchedulerConfig> | undefined;
@@ -219,59 +216,54 @@ const migrateLegacyState = (parsed: Partial<BookingState>): BookingState | null 
   return null;
 };
 
-export const getInitialState = (): BookingState => {
-  const createFallbackState = (): BookingState => {
-    const scheduler = createScheduler('Default Schedule');
-    return {
-      schedulers: [scheduler],
-      activeSchedulerId: scheduler.id,
-      adminPasscode: DEFAULT_ADMIN_PASSCODE,
-    };
+const createFallbackState = (): BookingState => {
+  const scheduler = createScheduler('Default Schedule');
+  return {
+    schedulers: [scheduler],
+    activeSchedulerId: scheduler.id,
+    adminPasscode: DEFAULT_ADMIN_PASSCODE,
   };
+};
 
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored) as Partial<BookingState>;
-      const migrated = migrateLegacyState(parsed);
-      if (migrated) {
-        return migrated;
-      }
-      if (Array.isArray(parsed.schedulers)) {
-        const sanitizedSchedulers = parsed.schedulers
-          .map((scheduler) => {
-            try {
-              return sanitizeScheduler(scheduler as Partial<Scheduler>);
-            } catch {
-              return null;
-            }
-          })
-          .filter((scheduler): scheduler is Scheduler => scheduler !== null);
-
-        if (sanitizedSchedulers.length === 0) {
-          return createFallbackState();
-        }
-
-        const hasActiveScheduler = sanitizedSchedulers.some(
-          (scheduler) => scheduler.id === parsed.activeSchedulerId
-        );
-
-        return {
-          schedulers: sanitizedSchedulers,
-          activeSchedulerId: hasActiveScheduler
-            ? parsed.activeSchedulerId ?? sanitizedSchedulers[0].id
-            : sanitizedSchedulers[0].id,
-          adminPasscode: parsed.adminPasscode ?? DEFAULT_ADMIN_PASSCODE,
-        };
-      }
-    } catch {
-      // ignore parsing errors
-    }
+export const hydrateState = (parsed: Partial<BookingState>): BookingState | null => {
+  const migrated = migrateLegacyState(parsed);
+  if (migrated) {
+    return migrated;
   }
 
+  if (!Array.isArray(parsed.schedulers)) {
+    return null;
+  }
+
+  const sanitizedSchedulers = parsed.schedulers
+    .map((scheduler) => {
+      try {
+        return sanitizeScheduler(scheduler as Partial<Scheduler>);
+      } catch {
+        return null;
+      }
+    })
+    .filter((scheduler): scheduler is Scheduler => scheduler !== null);
+
+  if (sanitizedSchedulers.length === 0) {
+    return null;
+  }
+
+  const hasActiveScheduler = sanitizedSchedulers.some((scheduler) => scheduler.id === parsed.activeSchedulerId);
+
+  return {
+    schedulers: sanitizedSchedulers,
+    activeSchedulerId: hasActiveScheduler
+      ? parsed.activeSchedulerId ?? sanitizedSchedulers[0].id
+      : sanitizedSchedulers[0].id,
+    adminPasscode: parsed.adminPasscode ?? DEFAULT_ADMIN_PASSCODE,
+  };
+};
+
+export const getInitialState = (): BookingState => {
   return createFallbackState();
 };
 
-export const saveState = (state: BookingState): void => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+export const saveState = (_state: BookingState): void => {
+  // Local storage persistence disabled. State is remote-only.
 };

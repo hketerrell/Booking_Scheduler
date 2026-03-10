@@ -6,10 +6,9 @@ import {
   generateDateSlots,
   generateDateTimeSlots,
   getInitialState,
-  STORAGE_KEY,
-  saveState,
 } from './data/initialData';
 import { cn } from './utils/cn';
+import { isRemotePersistenceEnabled, loadRemoteState, saveRemoteState } from './data/remotePersistence';
 
 type ViewMode = 'booking' | 'admin';
 
@@ -66,10 +65,43 @@ export function App() {
   const [adminAuthorized, setAdminAuthorized] = useState(false);
   const [passcodeInput, setPasscodeInput] = useState('');
   const [passcodeError, setPasscodeError] = useState('');
+  const [remoteReady, setRemoteReady] = useState(false);
+  const [remoteError, setRemoteError] = useState('');
 
   useEffect(() => {
-    saveState(state);
-  }, [state]);
+    let cancelled = false;
+
+    loadRemoteState()
+      .then((remoteState) => {
+        if (cancelled) {
+          return;
+        }
+        setState(remoteState);
+        setRemoteReady(true);
+      })
+      .catch((error) => {
+        if (cancelled) {
+          return;
+        }
+        const message = error instanceof Error ? error.message : 'Failed to load remote data.';
+        setRemoteError(message);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!remoteReady) {
+      return;
+    }
+
+    saveRemoteState(state).catch((error) => {
+      const message = error instanceof Error ? error.message : 'Failed to save remote data.';
+      setRemoteError(message);
+    });
+  }, [remoteReady, state]);
 
   const activeScheduler = useMemo(() => {
     return (
@@ -107,6 +139,7 @@ export function App() {
   };
 
   const handleResetData = () => {
+
     if (!activeScheduler) {
       return;
     }
@@ -213,24 +246,48 @@ export function App() {
     }
   };
 
+  if (!isRemotePersistenceEnabled()) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4">
+        <div className="max-w-md w-full rounded-2xl bg-white border border-slate-200 shadow-sm p-6 space-y-3">
+          <h1 className="text-lg font-semibold text-slate-800">Remote persistence is required</h1>
+          <p className="text-sm text-slate-600">
+            Please configure <code>VITE_WORKER_API_URL</code> so the app can load data from GitHub via Cloudflare Worker.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (remoteError) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4">
+        <div className="max-w-md w-full rounded-2xl bg-white border border-red-200 shadow-sm p-6 space-y-3">
+          <h1 className="text-lg font-semibold text-red-700">Unable to load remote data</h1>
+          <p className="text-sm text-slate-600">{remoteError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!remoteReady) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4">
+        <div className="max-w-md w-full rounded-2xl bg-white border border-slate-200 shadow-sm p-6 space-y-3">
+          <h1 className="text-lg font-semibold text-slate-800">Loading remote scheduler data...</h1>
+        </div>
+      </div>
+    );
+  }
+
   if (!activeScheduler) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4">
         <div className="max-w-md w-full rounded-2xl bg-white border border-slate-200 shadow-sm p-6 space-y-3">
           <h1 className="text-lg font-semibold text-slate-800">Unable to load scheduler data</h1>
           <p className="text-sm text-slate-600">
-            Stored browser data appears invalid. Reset local data to recover the booking page.
+            Remote scheduler data appears invalid.
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              localStorage.removeItem(STORAGE_KEY);
-              window.location.reload();
-            }}
-            className="w-full rounded-lg bg-indigo-600 text-white py-2.5 font-medium hover:bg-indigo-700 transition-colors"
-          >
-            Reset local data
-          </button>
         </div>
       </div>
     );
