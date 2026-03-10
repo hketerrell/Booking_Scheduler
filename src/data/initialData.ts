@@ -191,6 +191,15 @@ const migrateLegacyState = (parsed: Partial<BookingState>): BookingState | null 
 };
 
 export const getInitialState = (): BookingState => {
+  const createFallbackState = (): BookingState => {
+    const scheduler = createScheduler('Default Schedule');
+    return {
+      schedulers: [scheduler],
+      activeSchedulerId: scheduler.id,
+      adminPasscode: DEFAULT_ADMIN_PASSCODE,
+    };
+  };
+
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) {
     try {
@@ -200,9 +209,20 @@ export const getInitialState = (): BookingState => {
         return migrated;
       }
       if (parsed.schedulers && parsed.activeSchedulerId) {
+        const normalizedSchedulers = parsed.schedulers.map(normalizeScheduler);
+        if (normalizedSchedulers.length === 0) {
+          return createFallbackState();
+        }
+
+        const hasActiveScheduler = normalizedSchedulers.some(
+          (scheduler) => scheduler.id === parsed.activeSchedulerId
+        );
+
         return {
-          schedulers: parsed.schedulers.map(normalizeScheduler),
-          activeSchedulerId: parsed.activeSchedulerId,
+          schedulers: normalizedSchedulers,
+          activeSchedulerId: hasActiveScheduler
+            ? parsed.activeSchedulerId
+            : normalizedSchedulers[0].id,
           adminPasscode: parsed.adminPasscode ?? DEFAULT_ADMIN_PASSCODE,
         } as BookingState;
       }
@@ -211,12 +231,7 @@ export const getInitialState = (): BookingState => {
     }
   }
 
-  const scheduler = createScheduler('Default Schedule');
-  return {
-    schedulers: [scheduler],
-    activeSchedulerId: scheduler.id,
-    adminPasscode: DEFAULT_ADMIN_PASSCODE,
-  };
+  return createFallbackState();
 };
 
 export const saveState = (state: BookingState): void => {
