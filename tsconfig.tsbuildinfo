@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/types.ts","./src/components/AdminPanel.tsx","./src/components/BookingForm.tsx","./src/components/DateSlotSelector.tsx","./src/components/TimeSlotSelector.tsx","./src/data/initialData.ts","./src/utils/cn.ts","./vite.config.ts"],"errors":true,"version":"5.9.3"}

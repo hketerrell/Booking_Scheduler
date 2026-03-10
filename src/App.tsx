@@ -6,6 +6,7 @@ import {
   generateDateSlots,
   generateDateTimeSlots,
   getInitialState,
+  STORAGE_KEY,
   saveState,
 } from './data/initialData';
 import { cn } from './utils/cn';
@@ -213,7 +214,26 @@ export function App() {
   };
 
   if (!activeScheduler) {
-    return null;
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4">
+        <div className="max-w-md w-full rounded-2xl bg-white border border-slate-200 shadow-sm p-6 space-y-3">
+          <h1 className="text-lg font-semibold text-slate-800">Unable to load scheduler data</h1>
+          <p className="text-sm text-slate-600">
+            Stored browser data appears invalid. Reset local data to recover the booking page.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.removeItem(STORAGE_KEY);
+              window.location.reload();
+            }}
+            className="w-full rounded-lg bg-indigo-600 text-white py-2.5 font-medium hover:bg-indigo-700 transition-colors"
+          >
+            Reset local data
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
