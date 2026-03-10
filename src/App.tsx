@@ -252,7 +252,7 @@ export function App() {
         <div className="max-w-md w-full rounded-2xl bg-white border border-slate-200 shadow-sm p-6 space-y-3">
           <h1 className="text-lg font-semibold text-slate-800">Remote persistence is required</h1>
           <p className="text-sm text-slate-600">
-            Please configure <code>VITE_WORKER_API_URL</code> so the app can load data from GitHub via Cloudflare Worker.
+            Please configure <code>VITE_WORKER_API_URL</code> so the app can load data from MongoDB via Cloudflare Worker.
           </p>
         </div>
       </div>

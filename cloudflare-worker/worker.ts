@@ -1,9 +1,10 @@
 export interface Env {
-  GITHUB_TOKEN: string;
-  GITHUB_OWNER: string;
-  GITHUB_REPO: string;
-  GITHUB_BRANCH?: string;
-  GITHUB_FILE_PATH: string;
+  MONGODB_DATA_API_URL: string;
+  MONGODB_DATA_API_KEY: string;
+  MONGODB_DATA_SOURCE: string;
+  MONGODB_DATABASE: string;
+  MONGODB_COLLECTION: string;
+  MONGODB_DOCUMENT_ID?: string;
   API_KEY?: string;
 }
 
@@ -33,54 +34,58 @@ const isAuthorized = (request: Request, env: Env) => {
   return token === env.API_KEY;
 };
 
-const getGithubFile = async (env: Env) => {
-  const branch = env.GITHUB_BRANCH ?? 'main';
-  const response = await fetch(
-    `https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${env.GITHUB_FILE_PATH}?ref=${branch}`,
-    {
-      headers: {
-        Authorization: `Bearer ${env.GITHUB_TOKEN}`,
-        Accept: 'application/vnd.github+json',
-      },
-    }
-  );
+interface MongoDataApiResponse<T> {
+  document?: T;
+  modifiedCount?: number;
+  upsertedId?: unknown;
+  matchedCount?: number;
+}
 
-  if (response.status === 404) {
-    return null;
-  }
+const getDocumentId = (env: Env) => env.MONGODB_DOCUMENT_ID ?? 'booking-scheduler-state';
+
+const mongoRequest = async <T>(env: Env, action: string, body: Record<string, unknown>): Promise<T> => {
+  const response = await fetch(`${env.MONGODB_DATA_API_URL.replace(/\/$/, '')}/action/${action}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'api-key': env.MONGODB_DATA_API_KEY,
+    },
+    body: JSON.stringify({
+      dataSource: env.MONGODB_DATA_SOURCE,
+      database: env.MONGODB_DATABASE,
+      collection: env.MONGODB_COLLECTION,
+      ...body,
+    }),
+  });
 
   if (!response.ok) {
-    throw new Error(`GitHub read failed: ${response.status}`);
+    const errorText = await response.text();
+    throw new Error(`MongoDB Data API ${action} failed (${response.status}): ${errorText}`);
   }
 
-  const data = (await response.json()) as { content: string; sha: string };
-  const decoded = atob(data.content.replace(/\n/g, ''));
-  return { sha: data.sha, text: decoded };
+  return (await response.json()) as T;
 };
 
-const putGithubFile = async (env: Env, content: string, sha?: string) => {
-  const branch = env.GITHUB_BRANCH ?? 'main';
-  const response = await fetch(
-    `https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${env.GITHUB_FILE_PATH}`,
-    {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${env.GITHUB_TOKEN}`,
-        Accept: 'application/vnd.github+json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: `Update booking scheduler data (${new Date().toISOString()})`,
-        content: btoa(unescape(encodeURIComponent(content))),
-        branch,
-        sha,
-      }),
-    }
-  );
+const getMongoState = async (env: Env) => {
+  const result = await mongoRequest<MongoDataApiResponse<{ state?: unknown }>>(env, 'findOne', {
+    filter: { _id: getDocumentId(env) },
+    projection: { state: 1, _id: 0 },
+  });
 
-  if (!response.ok) {
-    throw new Error(`GitHub write failed: ${response.status}`);
-  }
+  return result.document?.state ?? null;
+};
+
+const putMongoState = async (env: Env, state: unknown) => {
+  await mongoRequest<MongoDataApiResponse<unknown>>(env, 'updateOne', {
+    filter: { _id: getDocumentId(env) },
+    update: {
+      $set: {
+        state,
+        updatedAt: new Date().toISOString(),
+      },
+    },
+    upsert: true,
+  });
 };
 
 export default {
@@ -95,12 +100,12 @@ export default {
 
     try {
       if (request.method === 'GET') {
-        const file = await getGithubFile(env);
-        if (!file) {
+        const state = await getMongoState(env);
+        if (!state) {
           return json({ state: null }, { status: 404 });
         }
 
-        return json({ state: JSON.parse(file.text) });
+        return json({ state });
       }
 
       if (request.method === 'PUT') {
@@ -109,8 +114,7 @@ export default {
           return json({ error: 'Missing state payload' }, { status: 400 });
         }
 
-        const existingFile = await getGithubFile(env);
-        await putGithubFile(env, JSON.stringify(payload.state, null, 2), existingFile?.sha);
+        await putMongoState(env, payload.state);
         return json({ ok: true });
       }
 
