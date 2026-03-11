@@ -1,14 +1,4 @@
-export interface Env {
-  MONGODB_DATA_API_URL: string;
-  MONGODB_DATA_API_KEY: string;
-  MONGODB_DATA_SOURCE: string;
-  MONGODB_DATABASE: string;
-  MONGODB_COLLECTION: string;
-  MONGODB_DOCUMENT_ID?: string;
-  API_KEY?: string;
-}
-
-const json = (data: unknown, init?: ResponseInit) =>
+const json = (data, init = {}) =>
   new Response(JSON.stringify(data), {
     ...init,
     headers: {
@@ -16,11 +6,11 @@ const json = (data: unknown, init?: ResponseInit) =>
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET,PUT,OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      ...(init?.headers ?? {}),
+      ...(init.headers || {}),
     },
   });
 
-const isAuthorized = (request: Request, env: Env) => {
+const isAuthorized = (request, env) => {
   if (!env.API_KEY) {
     return true;
   }
@@ -34,16 +24,9 @@ const isAuthorized = (request: Request, env: Env) => {
   return token === env.API_KEY;
 };
 
-interface MongoDataApiResponse<T> {
-  document?: T;
-  modifiedCount?: number;
-  upsertedId?: unknown;
-  matchedCount?: number;
-}
+const getDocumentId = (env) => env.MONGODB_DOCUMENT_ID ?? 'booking-scheduler-state';
 
-const getDocumentId = (env: Env) => env.MONGODB_DOCUMENT_ID ?? 'booking-scheduler-state';
-
-const mongoRequest = async <T>(env: Env, action: string, body: Record<string, unknown>): Promise<T> => {
+const mongoRequest = async (env, action, body) => {
   const response = await fetch(`${env.MONGODB_DATA_API_URL.replace(/\/$/, '')}/action/${action}`, {
     method: 'POST',
     headers: {
@@ -63,11 +46,11 @@ const mongoRequest = async <T>(env: Env, action: string, body: Record<string, un
     throw new Error(`MongoDB Data API ${action} failed (${response.status}): ${errorText}`);
   }
 
-  return (await response.json()) as T;
+  return response.json();
 };
 
-const getMongoState = async (env: Env) => {
-  const result = await mongoRequest<MongoDataApiResponse<{ state?: unknown }>>(env, 'findOne', {
+const getMongoState = async (env) => {
+  const result = await mongoRequest(env, 'findOne', {
     filter: { _id: getDocumentId(env) },
     projection: { state: 1, _id: 0 },
   });
@@ -75,8 +58,8 @@ const getMongoState = async (env: Env) => {
   return result.document?.state ?? null;
 };
 
-const putMongoState = async (env: Env, state: unknown) => {
-  await mongoRequest<MongoDataApiResponse<unknown>>(env, 'updateOne', {
+const putMongoState = async (env, state) => {
+  await mongoRequest(env, 'updateOne', {
     filter: { _id: getDocumentId(env) },
     update: {
       $set: {
@@ -89,7 +72,7 @@ const putMongoState = async (env: Env, state: unknown) => {
 };
 
 export default {
-  async fetch(request, env): Promise<Response> {
+  async fetch(request, env) {
     if (request.method === 'OPTIONS') {
       return json({}, { status: 200 });
     }
@@ -109,7 +92,7 @@ export default {
       }
 
       if (request.method === 'PUT') {
-        const payload = (await request.json()) as { state?: unknown };
+        const payload = await request.json();
         if (!payload.state) {
           return json({ error: 'Missing state payload' }, { status: 400 });
         }
@@ -124,5 +107,4 @@ export default {
       return json({ error: message }, { status: 500 });
     }
   },
-} satisfies ExportedHandler<Env>;
-
+};

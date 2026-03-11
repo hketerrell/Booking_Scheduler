@@ -15,7 +15,7 @@ This project supports syncing scheduler data to a Cloudflare Worker endpoint. Th
 
 ## 2) Deploy the Worker
 
-1. Copy `cloudflare-worker/worker.ts` into a Worker project (`wrangler init`).
+1. Copy `cloudflare-worker/worker.js` into a Worker project (`wrangler init`).
 2. Add Worker secrets/vars:
    - `MONGODB_DATA_API_URL`
    - `MONGODB_DATA_API_KEY`
