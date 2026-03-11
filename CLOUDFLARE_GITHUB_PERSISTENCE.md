@@ -13,30 +13,20 @@ This project supports syncing scheduler data to a Cloudflare Worker endpoint. Th
    - Database name
    - Collection name
 
-## 2) Deploy without npm (Cloudflare Dashboard only)
+## 2) Deploy the Worker
 
-If your computer cannot run npm/Wrangler, use the Cloudflare web editor:
+1. Copy `cloudflare-worker/worker.ts` into a Worker project (`wrangler init`).
+2. Add Worker secrets/vars:
+   - `MONGODB_DATA_API_URL`
+   - `MONGODB_DATA_API_KEY`
+   - `MONGODB_DATA_SOURCE`
+   - `MONGODB_DATABASE`
+   - `MONGODB_COLLECTION`
+   - `MONGODB_DOCUMENT_ID` (optional, defaults to `booking-scheduler-state`)
+   - `API_KEY` (optional shared secret used by frontend `Authorization: Bearer <key>`)
+3. Deploy using Wrangler.
 
-1. Go to **Workers & Pages** in Cloudflare Dashboard.
-2. Click **Create application** → **Create Worker**.
-3. Open the code editor and paste the contents of `cloudflare-worker/worker.ts`.
-4. Save and deploy.
-
-> This worker file uses `addEventListener('fetch', ...)` syntax to avoid module `export` errors in dashboard script mode.
-
-## 3) Add Worker secrets/variables
-
-In Worker **Settings → Variables** add:
-
-- `MONGODB_DATA_API_URL`
-- `MONGODB_DATA_API_KEY`
-- `MONGODB_DATA_SOURCE`
-- `MONGODB_DATABASE`
-- `MONGODB_COLLECTION`
-- `MONGODB_DOCUMENT_ID` (optional, defaults to `booking-scheduler-state`)
-- `API_KEY` (optional shared secret used by frontend `Authorization: Bearer <key>`)
-
-## 4) Configure frontend
+## 3) Configure frontend
 
 Create `.env` (or set in deployment environment):
 
@@ -45,7 +35,7 @@ VITE_WORKER_API_URL="https://<your-worker>.workers.dev"
 VITE_WORKER_API_KEY="<same API_KEY if enabled>"
 ```
 
-## 5) Runtime behavior
+## 4) Runtime behavior
 
 - App requires `VITE_WORKER_API_URL`; without it, the UI shows a configuration error.
 - On startup, app loads state from the worker `GET` endpoint.
