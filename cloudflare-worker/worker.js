@@ -26,8 +26,26 @@ const isAuthorized = (request, env) => {
 
 const getDocumentId = (env) => env.MONGODB_DOCUMENT_ID ?? 'booking-scheduler-state';
 
+const getMongoActionUrl = (env, action) => {
+  const baseUrl = (env.MONGODB_DATA_API_URL ?? '').trim().replace(/\/+$/, '');
+
+  if (!baseUrl) {
+    throw new Error('Missing MONGODB_DATA_API_URL');
+  }
+
+  if (/\/action\/[A-Za-z]+$/i.test(baseUrl)) {
+    return baseUrl.replace(/\/action\/[A-Za-z]+$/i, `/action/${action}`);
+  }
+
+  if (/\/action$/i.test(baseUrl)) {
+    return `${baseUrl}/${action}`;
+  }
+
+  return `${baseUrl}/action/${action}`;
+};
+
 const mongoRequest = async (env, action, body) => {
-  const response = await fetch(`${env.MONGODB_DATA_API_URL.replace(/\/$/, '')}/action/${action}`, {
+  const response = await fetch(getMongoActionUrl(env, action), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -43,7 +61,11 @@ const mongoRequest = async (env, action, body) => {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`MongoDB Data API ${action} failed (${response.status}): ${errorText}`);
+    const hint =
+      response.status === 404
+        ? ' Check MONGODB_DATA_API_URL. Use either the Data API base URL (.../endpoint/data/v1), the /action URL, or a full /action/<name> URL.'
+        : '';
+    throw new Error(`MongoDB Data API ${action} failed (${response.status}): ${errorText}${hint}`);
   }
 
   return response.json();

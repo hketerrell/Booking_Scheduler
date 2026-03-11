@@ -8,7 +8,8 @@ This project supports syncing scheduler data to a Cloudflare Worker endpoint. Th
 2. Enable the **Data API** for your project.
 3. Create a Data API key.
 4. Record the following values:
-   - Data API base URL (example: `https://data.mongodb-api.com/app/<app-id>/endpoint/data/v1`)
+   - Data API URL (recommended: `https://data.mongodb-api.com/app/<app-id>/endpoint/data/v1`)
+     - Worker now accepts any of these formats: base URL above, same URL ending with `/action`, or a full action URL like `.../action/findOne`.
    - Data source name (usually `Cluster0`)
    - Database name
    - Collection name
@@ -42,3 +43,7 @@ VITE_WORKER_API_KEY="<same API_KEY if enabled>"
 - If remote load fails or returns invalid payload, app shows an error screen.
 - Every state update is synced to worker with `PUT` (localStorage persistence is disabled).
 - Worker stores all state inside one MongoDB document under the `state` field.
+
+## Troubleshooting
+
+- Error `MongoDB Data API findOne failed (404)` usually means `MONGODB_DATA_API_URL` is malformed for your setup. Verify it matches one of the accepted formats above and that Data API is enabled in Atlas.
