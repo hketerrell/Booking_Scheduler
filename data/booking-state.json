@@ -4,13 +4,31 @@
       {
         "id": "scheduler-1773270223855-bjw0q",
         "name": "Default Schedule",
-        "submissions": [],
+        "submissions": [
+          {
+            "name": "test",
+            "email": "test@gmail.com",
+            "staffNumber": "1",
+            "preferredDateIds": [
+              "date-2026-05-01"
+            ],
+            "preferences": [
+              "date-2026-05-01-1330",
+              "date-2026-05-01-1530",
+              "date-2026-05-01-1630"
+            ],
+            "allUnavailable": false,
+            "id": "sub-1773270311845-vn2svsd",
+            "emailSent": false,
+            "submittedAt": "2026-03-11T23:05:11.845Z"
+          }
+        ],
         "dateSlots": [
           {
             "id": "date-2026-05-01",
             "label": "Fri, May 1",
             "date": "2026-05-01",
-            "currentBookings": 0,
+            "currentBookings": 3,
             "maxBookings": 40
           },
           {
@@ -202,7 +220,7 @@
             "label": "13:30 - 14:30",
             "startTime": "13:30",
             "endTime": "14:30",
-            "currentBookings": 0,
+            "currentBookings": 1,
             "maxBookings": 4
           },
           {
@@ -222,7 +240,7 @@
             "label": "15:30 - 16:30",
             "startTime": "15:30",
             "endTime": "16:30",
-            "currentBookings": 0,
+            "currentBookings": 1,
             "maxBookings": 4
           },
           {
@@ -232,7 +250,7 @@
             "label": "16:30 - 17:30",
             "startTime": "16:30",
             "endTime": "17:30",
-            "currentBookings": 0,
+            "currentBookings": 1,
             "maxBookings": 4
           },
           {
@@ -1862,5 +1880,5 @@
     "activeSchedulerId": "scheduler-1773270223855-bjw0q",
     "adminPasscode": "hkUO@852"
   },
-  "updatedAt": "2026-03-11T23:03:44.106Z"
+  "updatedAt": "2026-03-11T23:05:12.659Z"
 }
