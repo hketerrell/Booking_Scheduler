@@ -24,73 +24,106 @@ const isAuthorized = (request, env) => {
   return token === env.API_KEY;
 };
 
-const getDocumentId = (env) => env.MONGODB_DOCUMENT_ID ?? 'booking-scheduler-state';
+const getGitHubConfig = (env) => {
+  const owner = (env.GITHUB_OWNER ?? '').trim();
+  const repo = (env.GITHUB_REPO ?? '').trim();
+  const token = (env.GITHUB_TOKEN ?? '').trim();
+  const branch = (env.GITHUB_BRANCH ?? 'main').trim() || 'main';
+  const filePath = (env.GITHUB_FILE_PATH ?? 'data/booking-state.json').trim() || 'data/booking-state.json';
 
-const getMongoActionUrl = (env, action) => {
-  const baseUrl = (env.MONGODB_DATA_API_URL ?? '').trim().replace(/\/+$/, '');
-
-  if (!baseUrl) {
-    throw new Error('Missing MONGODB_DATA_API_URL');
+  if (!owner || !repo || !token) {
+    throw new Error('Missing GitHub config. Required: GITHUB_OWNER, GITHUB_REPO, GITHUB_TOKEN.');
   }
 
-  if (/\/action\/[A-Za-z]+$/i.test(baseUrl)) {
-    return baseUrl.replace(/\/action\/[A-Za-z]+$/i, `/action/${action}`);
-  }
-
-  if (/\/action$/i.test(baseUrl)) {
-    return `${baseUrl}/${action}`;
-  }
-
-  return `${baseUrl}/action/${action}`;
+  return { owner, repo, token, branch, filePath };
 };
 
-const mongoRequest = async (env, action, body) => {
-  const response = await fetch(getMongoActionUrl(env, action), {
-    method: 'POST',
+const toBase64 = (value) => btoa(unescape(encodeURIComponent(value)));
+
+const fromBase64 = (value) => decodeURIComponent(escape(atob(value)));
+
+const githubRequest = async ({ owner, repo, token, filePath, branch, method, body }) => {
+  const encodedPath = filePath.split('/').map(encodeURIComponent).join('/');
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodedPath}${
+    method === 'GET' ? `?ref=${encodeURIComponent(branch)}` : ''
+  }`;
+
+  const response = await fetch(url, {
+    method,
     headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
       'Content-Type': 'application/json',
-      'api-key': env.MONGODB_DATA_API_KEY,
+      'User-Agent': 'booking-scheduler-worker',
     },
-    body: JSON.stringify({
-      dataSource: env.MONGODB_DATA_SOURCE,
-      database: env.MONGODB_DATABASE,
-      collection: env.MONGODB_COLLECTION,
-      ...body,
-    }),
+    body: body ? JSON.stringify(body) : undefined,
   });
+
+  return response;
+};
+
+const getGitHubState = async (env) => {
+  const config = getGitHubConfig(env);
+  const response = await githubRequest({ ...config, method: 'GET' });
+
+  if (response.status === 404) {
+    return null;
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
-    const hint =
-      response.status === 404
-        ? ' Check MONGODB_DATA_API_URL. Use either the Data API base URL (.../endpoint/data/v1), the /action URL, or a full /action/<name> URL.'
-        : '';
-    throw new Error(`MongoDB Data API ${action} failed (${response.status}): ${errorText}${hint}`);
+    throw new Error(`GitHub read failed (${response.status}): ${errorText}`);
   }
 
-  return response.json();
+  const payload = await response.json();
+  if (!payload.content) {
+    throw new Error('GitHub file response is missing content.');
+  }
+
+  const parsed = JSON.parse(fromBase64(payload.content.replace(/\n/g, '')));
+
+  if (parsed && typeof parsed === 'object' && parsed.state) {
+    return parsed.state;
+  }
+
+  return parsed;
 };
 
-const getMongoState = async (env) => {
-  const result = await mongoRequest(env, 'findOne', {
-    filter: { _id: getDocumentId(env) },
-    projection: { state: 1, _id: 0 },
-  });
+const putGitHubState = async (env, state) => {
+  const config = getGitHubConfig(env);
+  const existingResponse = await githubRequest({ ...config, method: 'GET' });
 
-  return result.document?.state ?? null;
-};
+  let currentSha;
+  if (existingResponse.status !== 404) {
+    if (!existingResponse.ok) {
+      const errorText = await existingResponse.text();
+      throw new Error(`GitHub lookup failed (${existingResponse.status}): ${errorText}`);
+    }
 
-const putMongoState = async (env, state) => {
-  await mongoRequest(env, 'updateOne', {
-    filter: { _id: getDocumentId(env) },
-    update: {
-      $set: {
-        state,
-        updatedAt: new Date().toISOString(),
-      },
+    const existingPayload = await existingResponse.json();
+    currentSha = existingPayload.sha;
+  }
+
+  const payload = {
+    state,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const writeResponse = await githubRequest({
+    ...config,
+    method: 'PUT',
+    body: {
+      message: 'Update booking scheduler state',
+      content: toBase64(JSON.stringify(payload, null, 2)),
+      branch: config.branch,
+      ...(currentSha ? { sha: currentSha } : {}),
     },
-    upsert: true,
   });
+
+  if (!writeResponse.ok) {
+    const errorText = await writeResponse.text();
+    throw new Error(`GitHub write failed (${writeResponse.status}): ${errorText}`);
+  }
 };
 
 export default {
@@ -105,7 +138,7 @@ export default {
 
     try {
       if (request.method === 'GET') {
-        const state = await getMongoState(env);
+        const state = await getGitHubState(env);
         if (!state) {
           return json({ state: null }, { status: 404 });
         }
@@ -119,7 +152,7 @@ export default {
           return json({ error: 'Missing state payload' }, { status: 400 });
         }
 
-        await putMongoState(env, payload.state);
+        await putGitHubState(env, payload.state);
         return json({ ok: true });
       }
 

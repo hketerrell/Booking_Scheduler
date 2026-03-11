@@ -1,29 +1,27 @@
-# Cloudflare Worker + MongoDB persistence
+# Cloudflare Worker + GitHub JSON persistence
 
-This project supports syncing scheduler data to a Cloudflare Worker endpoint. The worker reads/writes booking state in MongoDB through the MongoDB Atlas Data API.
+This project supports syncing scheduler data to a Cloudflare Worker endpoint. The worker reads/writes booking state to a JSON file in a GitHub repository using the GitHub Contents API.
 
-## 1) Prepare MongoDB Atlas Data API
+## 1) Prepare GitHub repository access
 
-1. In Atlas, create (or choose) a cluster/database/collection for scheduler state.
-2. Enable the **Data API** for your project.
-3. Create a Data API key.
-4. Record the following values:
-   - Data API URL (recommended: `https://data.mongodb-api.com/app/<app-id>/endpoint/data/v1`)
-     - Worker now accepts any of these formats: base URL above, same URL ending with `/action`, or a full action URL like `.../action/findOne`.
-   - Data source name (usually `Cluster0`)
-   - Database name
-   - Collection name
+1. Choose a repository that will store the scheduler JSON file.
+2. Create a personal access token (classic or fine-grained) with **repo contents read/write** permission for that repository.
+3. Record these values:
+   - GitHub owner/org name
+   - Repository name
+   - Branch name (for example `main`)
+   - File path (for example `data/booking-state.json`)
+   - GitHub token
 
 ## 2) Deploy the Worker
 
 1. Copy `cloudflare-worker/worker.js` into a Worker project (`wrangler init`).
 2. Add Worker secrets/vars:
-   - `MONGODB_DATA_API_URL`
-   - `MONGODB_DATA_API_KEY`
-   - `MONGODB_DATA_SOURCE`
-   - `MONGODB_DATABASE`
-   - `MONGODB_COLLECTION`
-   - `MONGODB_DOCUMENT_ID` (optional, defaults to `booking-scheduler-state`)
+   - `GITHUB_OWNER`
+   - `GITHUB_REPO`
+   - `GITHUB_TOKEN`
+   - `GITHUB_BRANCH` (optional, defaults to `main`)
+   - `GITHUB_FILE_PATH` (optional, defaults to `data/booking-state.json`)
    - `API_KEY` (optional shared secret used by frontend `Authorization: Bearer <key>`)
 3. Deploy using Wrangler.
 
@@ -42,8 +40,10 @@ VITE_WORKER_API_KEY="<same API_KEY if enabled>"
 - On startup, app loads state from the worker `GET` endpoint.
 - If remote load fails or returns invalid payload, app shows an error screen.
 - Every state update is synced to worker with `PUT` (localStorage persistence is disabled).
-- Worker stores all state inside one MongoDB document under the `state` field.
+- Worker stores all state in the configured GitHub JSON file.
 
 ## Troubleshooting
 
-- Error `MongoDB Data API findOne failed (404)` usually means `MONGODB_DATA_API_URL` is malformed for your setup. Verify it matches one of the accepted formats above and that Data API is enabled in Atlas.
+- `GitHub read failed (401/403)`: verify `GITHUB_TOKEN` permissions and repo access.
+- `GitHub write failed (409/422)`: check branch protection rules and token write scope.
+- If the file does not exist yet, the worker creates it automatically on first `PUT`.
