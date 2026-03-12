@@ -22,7 +22,7 @@
             "id": "sub-1773279864718-nbpwef6",
             "emailSent": false,
             "submittedAt": "2026-03-12T01:44:24.718Z",
-            "assignedSlotId": "date-2026-05-29-1630"
+            "assignedSlotId": ""
           },
           {
             "name": "Lee",
@@ -78,7 +78,7 @@
             "id": "date-2026-05-04",
             "label": "Mon, May 4",
             "date": "2026-05-04",
-            "currentBookings": 5,
+            "currentBookings": 7,
             "maxBookings": 40
           },
           {
@@ -216,7 +216,7 @@
             "label": "09:30 - 10:30",
             "startTime": "09:30",
             "endTime": "10:30",
-            "currentBookings": 2,
+            "currentBookings": 3,
             "maxBookings": 4
           },
           {
@@ -226,7 +226,7 @@
             "label": "10:30 - 11:30",
             "startTime": "10:30",
             "endTime": "11:30",
-            "currentBookings": 2,
+            "currentBookings": 3,
             "maxBookings": 4
           },
           {
@@ -1757,5 +1757,5 @@
     "activeSchedulerId": "scheduler-1773270223855-bjw0q",
     "adminPasscode": "hkUO@852"
   },
-  "updatedAt": "2026-03-12T01:57:37.773Z"
+  "updatedAt": "2026-03-12T01:57:42.376Z"
 }
