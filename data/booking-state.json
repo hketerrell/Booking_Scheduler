@@ -22,6 +22,24 @@
             "emailSent": true,
             "submittedAt": "2026-03-11T23:05:11.845Z",
             "assignedSlotId": "date-2026-05-01-1330"
+          },
+          {
+            "name": "Simpson Lee",
+            "email": "simpsonts.lee@hkexpress.com",
+            "staffNumber": "1937",
+            "preferredDateIds": [
+              "date-2026-05-01",
+              "date-2026-05-29"
+            ],
+            "preferences": [
+              "date-2026-05-01-0930",
+              "date-2026-05-01-1030",
+              "date-2026-05-29-1630"
+            ],
+            "allUnavailable": false,
+            "id": "sub-1773274199555-679jdbg",
+            "emailSent": false,
+            "submittedAt": "2026-03-12T00:09:59.555Z"
           }
         ],
         "dateSlots": [
@@ -29,7 +47,7 @@
             "id": "date-2026-05-01",
             "label": "Fri, May 1",
             "date": "2026-05-01",
-            "currentBookings": 1,
+            "currentBookings": 3,
             "maxBookings": 40
           },
           {
@@ -169,7 +187,7 @@
             "id": "date-2026-05-29",
             "label": "Fri, May 29",
             "date": "2026-05-29",
-            "currentBookings": 0,
+            "currentBookings": 1,
             "maxBookings": 40
           }
         ],
@@ -181,7 +199,7 @@
             "label": "09:30 - 10:30",
             "startTime": "09:30",
             "endTime": "10:30",
-            "currentBookings": 0,
+            "currentBookings": 1,
             "maxBookings": 4
           },
           {
@@ -191,7 +209,7 @@
             "label": "10:30 - 11:30",
             "startTime": "10:30",
             "endTime": "11:30",
-            "currentBookings": 0,
+            "currentBookings": 1,
             "maxBookings": 4
           },
           {
@@ -1851,7 +1869,7 @@
             "label": "16:30 - 17:30",
             "startTime": "16:30",
             "endTime": "17:30",
-            "currentBookings": 0,
+            "currentBookings": 1,
             "maxBookings": 4
           }
         ],
@@ -1881,5 +1899,5 @@
     "activeSchedulerId": "scheduler-1773270223855-bjw0q",
     "adminPasscode": "hkUO@852"
   },
-  "updatedAt": "2026-03-12T00:09:24.046Z"
+  "updatedAt": "2026-03-12T00:10:00.629Z"
 }
