@@ -31,6 +31,10 @@ const json = (request, data, init = {}) =>
   });
 
 const isAuthorized = (request, env) => {
+  if (request.method === 'GET') {
+    return true;
+  }
+
   if (!env.API_KEY) {
     return false;
   }
@@ -160,10 +164,6 @@ export default {
       return json(request, { error: 'Forbidden origin' }, { status: 403 });
     }
 
-    if (!isAuthorized(request, env)) {
-      return json(request, { error: 'Unauthorized' }, { status: 401 });
-    }
-
     try {
       if (request.method === 'GET') {
         const state = await getGitHubState(env);
@@ -175,6 +175,10 @@ export default {
       }
 
       if (request.method === 'PUT') {
+        if (!isAuthorized(request, env)) {
+          return json(request, { error: 'Unauthorized' }, { status: 401 });
+        }
+
         const payload = await request.json();
         if (!payload.state) {
           return json(request, { error: 'Missing state payload' }, { status: 400 });
