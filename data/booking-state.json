@@ -75,134 +75,134 @@
         ],
         "dateSlots": [
           {
-            "id": "date-2026-05-04",
-            "label": "Mon, May 4",
-            "date": "2026-05-04",
-            "currentBookings": 5,
-            "maxBookings": 40
-          },
-          {
             "id": "date-2026-05-05",
-            "label": "Tue, May 5",
+            "label": "Mon, May 4",
             "date": "2026-05-05",
             "currentBookings": 0,
             "maxBookings": 40
           },
           {
             "id": "date-2026-05-06",
-            "label": "Wed, May 6",
+            "label": "Tue, May 5",
             "date": "2026-05-06",
             "currentBookings": 0,
             "maxBookings": 40
           },
           {
             "id": "date-2026-05-07",
-            "label": "Thu, May 7",
+            "label": "Wed, May 6",
             "date": "2026-05-07",
             "currentBookings": 0,
             "maxBookings": 40
           },
           {
             "id": "date-2026-05-08",
-            "label": "Fri, May 8",
+            "label": "Thu, May 7",
             "date": "2026-05-08",
             "currentBookings": 0,
             "maxBookings": 40
           },
           {
-            "id": "date-2026-05-11",
-            "label": "Mon, May 11",
-            "date": "2026-05-11",
+            "id": "date-2026-05-09",
+            "label": "Fri, May 8",
+            "date": "2026-05-09",
             "currentBookings": 0,
-            "maxBookings": 40
+            "maxBookings": 0
           },
           {
             "id": "date-2026-05-12",
-            "label": "Tue, May 12",
+            "label": "Mon, May 11",
             "date": "2026-05-12",
             "currentBookings": 0,
             "maxBookings": 40
           },
           {
             "id": "date-2026-05-13",
-            "label": "Wed, May 13",
+            "label": "Tue, May 12",
             "date": "2026-05-13",
             "currentBookings": 0,
             "maxBookings": 40
           },
           {
             "id": "date-2026-05-14",
-            "label": "Thu, May 14",
+            "label": "Wed, May 13",
             "date": "2026-05-14",
             "currentBookings": 0,
             "maxBookings": 40
           },
           {
             "id": "date-2026-05-15",
-            "label": "Fri, May 15",
+            "label": "Thu, May 14",
             "date": "2026-05-15",
             "currentBookings": 0,
             "maxBookings": 40
           },
           {
-            "id": "date-2026-05-18",
-            "label": "Mon, May 18",
-            "date": "2026-05-18",
+            "id": "date-2026-05-16",
+            "label": "Fri, May 15",
+            "date": "2026-05-16",
             "currentBookings": 0,
-            "maxBookings": 40
+            "maxBookings": 0
           },
           {
             "id": "date-2026-05-19",
-            "label": "Tue, May 19",
+            "label": "Mon, May 18",
             "date": "2026-05-19",
             "currentBookings": 0,
             "maxBookings": 40
           },
           {
             "id": "date-2026-05-20",
-            "label": "Wed, May 20",
+            "label": "Tue, May 19",
             "date": "2026-05-20",
             "currentBookings": 0,
             "maxBookings": 40
           },
           {
             "id": "date-2026-05-21",
-            "label": "Thu, May 21",
+            "label": "Wed, May 20",
             "date": "2026-05-21",
             "currentBookings": 1,
             "maxBookings": 40
           },
           {
             "id": "date-2026-05-22",
-            "label": "Fri, May 22",
+            "label": "Thu, May 21",
             "date": "2026-05-22",
             "currentBookings": 0,
             "maxBookings": 40
           },
           {
+            "id": "date-2026-05-23",
+            "label": "Fri, May 22",
+            "date": "2026-05-23",
+            "currentBookings": 0,
+            "maxBookings": 0
+          },
+          {
             "id": "date-2026-05-26",
-            "label": "Tue, May 26",
+            "label": "Mon, May 25",
             "date": "2026-05-26",
             "currentBookings": 0,
             "maxBookings": 40
           },
           {
             "id": "date-2026-05-27",
-            "label": "Wed, May 27",
+            "label": "Tue, May 26",
             "date": "2026-05-27",
             "currentBookings": 0,
             "maxBookings": 40
           },
           {
             "id": "date-2026-05-28",
-            "label": "Thu, May 28",
+            "label": "Wed, May 27",
             "date": "2026-05-28",
             "currentBookings": 0,
             "maxBookings": 40
           },
           {
             "id": "date-2026-05-29",
-            "label": "Fri, May 29",
+            "label": "Thu, May 28",
             "date": "2026-05-29",
             "currentBookings": 1,
             "maxBookings": 40
@@ -1757,5 +1757,5 @@
     "activeSchedulerId": "scheduler-1773270223855-bjw0q",
     "adminPasscode": "hkUO@852"
   },
-  "updatedAt": "2026-03-12T06:26:01.538Z"
+  "updatedAt": "2026-03-12T06:26:15.833Z"
 }
