@@ -1,11 +1,30 @@
-const ALLOWED_ORIGINS = new Set([
-  'https://hketerrell.github.io',
-  'https://simpson2002-hke.github.io',
-]);
+const ALLOWED_HOSTNAMES = new Set(['hketerrell.github.io', 'simpson2002-hke.github.io']);
+
+const parseOrigin = (origin) => {
+  if (!origin) {
+    return null;
+  }
+
+  try {
+    return new URL(origin);
+  } catch {
+    return null;
+  }
+};
+
+const isAllowedOrigin = (request) => {
+  const origin = request.headers.get('Origin');
+  const originUrl = parseOrigin(origin);
+  if (!originUrl) {
+    return true;
+  }
+
+  return originUrl.protocol === 'https:' && ALLOWED_HOSTNAMES.has(originUrl.hostname);
+};
 
 const getCorsHeaders = (request) => {
   const origin = request.headers.get('Origin');
-  const isAllowed = origin && ALLOWED_ORIGINS.has(origin);
+  const isAllowed = isAllowedOrigin(request) && Boolean(origin);
 
   return {
     'Access-Control-Allow-Origin': isAllowed ? origin : 'null',
@@ -13,11 +32,6 @@ const getCorsHeaders = (request) => {
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     Vary: 'Origin',
   };
-};
-
-const isAllowedOrigin = (request) => {
-  const origin = request.headers.get('Origin');
-  return Boolean(origin && ALLOWED_ORIGINS.has(origin));
 };
 
 const json = (request, data, init = {}) =>
