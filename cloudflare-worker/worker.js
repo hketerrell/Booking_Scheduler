@@ -35,6 +35,14 @@ const isAuthorized = (request, env) => {
     return true;
   }
 
+  if (isAllowedOrigin(request)) {
+    return true;
+  }
+
+  if (!env.API_KEY) {
+    return true;
+  }
+
   if (!env.API_KEY) {
     return false;
   }
