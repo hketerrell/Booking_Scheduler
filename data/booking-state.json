@@ -1749,7 +1749,7 @@
             "maxBookings": 4
           }
         ],
-        "pageTitle": "Booking Request",
+        "pageTitle": "EFB Replacement Booking Request",
         "pageDescription": "You EFB IPad device is about to be outdated since its Operation System will not support some applications anymore.\nTherefore, IPad Replacement is necessary and this site is to let you choose the preference timeslot for you to collect your new IPad. \nPlease fill in the form below and FOP office will arrange the best timeslots that suits everyone.",
         "emailTemplateSubject": "Your booking for EFB Replacement is confirmed: {{slot}}",
         "emailTemplateBody": "Hello {{name}},\n\nYour EFB Replacement booking has been confirmed for {{slot}}.\nPlease come to FOP Office, Cathay House on time according to your assigned timeslot. \n\nIf you have any further enquiries, please let us know.\n\nThank you very much,",
@@ -1776,5 +1776,5 @@
     "activeSchedulerId": "scheduler-1773270223855-bjw0q",
     "adminPasscode": "hkUO@852"
   },
-  "updatedAt": "2026-03-12T00:54:55.870Z"
+  "updatedAt": "2026-03-12T00:55:01.798Z"
 }
