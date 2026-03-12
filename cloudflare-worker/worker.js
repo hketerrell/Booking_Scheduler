@@ -1,11 +1,26 @@
-const json = (data, init = {}) =>
+const ALLOWED_ORIGINS = new Set([
+  'https://hketerrell.github.io',
+  'https://simpson2002-hke.github.io',
+]);
+
+const getCorsHeaders = (request) => {
+  const origin = request.headers.get('Origin');
+  const isAllowed = origin && ALLOWED_ORIGINS.has(origin);
+
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : 'null',
+    'Access-Control-Allow-Methods': 'GET,PUT,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    Vary: 'Origin',
+  };
+};
+
+const json = (request, data, init = {}) =>
   new Response(JSON.stringify(data), {
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET,PUT,OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      ...getCorsHeaders(request),
       ...(init.headers || {}),
     },
   });
@@ -129,37 +144,37 @@ const putGitHubState = async (env, state) => {
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') {
-      return json({}, { status: 200 });
+      return json(request, {}, { status: 200 });
     }
 
     if (!isAuthorized(request, env)) {
-      return json({ error: 'Unauthorized' }, { status: 401 });
+      return json(request, { error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
       if (request.method === 'GET') {
         const state = await getGitHubState(env);
         if (!state) {
-          return json({ state: null }, { status: 404 });
+          return json(request, { state: null }, { status: 404 });
         }
 
-        return json({ state });
+        return json(request, { state });
       }
 
       if (request.method === 'PUT') {
         const payload = await request.json();
         if (!payload.state) {
-          return json({ error: 'Missing state payload' }, { status: 400 });
+          return json(request, { error: 'Missing state payload' }, { status: 400 });
         }
 
         await putGitHubState(env, payload.state);
-        return json({ ok: true });
+        return json(request, { ok: true });
       }
 
-      return json({ error: 'Method not allowed' }, { status: 405 });
+      return json(request, { error: 'Method not allowed' }, { status: 405 });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      return json({ error: message }, { status: 500 });
+      return json(request, { error: message }, { status: 500 });
     }
   },
 };
