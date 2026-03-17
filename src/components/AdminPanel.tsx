@@ -21,6 +21,7 @@ interface AdminPanelProps {
 type AdminTab = 'overview' | 'submissions' | 'email' | 'settings';
 type PreferenceFilter = '' | '1' | '2' | '3' | 'all-unavailable';
 type StatusFilter = '' | 'pending' | 'assigned' | 'email-sent' | 'all-unavailable';
+type BuyIpadFilter = '' | 'yes' | 'no';
 
 type PreferenceEntry = {
   slot: DateTimeSlot;
@@ -139,6 +140,7 @@ export function AdminPanel({
   const [filterSlot, setFilterSlot] = useState('');
   const [filterPreference, setFilterPreference] = useState<PreferenceFilter>('');
   const [filterStatus, setFilterStatus] = useState<StatusFilter>('');
+  const [filterBuyIpad, setFilterBuyIpad] = useState<BuyIpadFilter>('');
   const [selectedSubmissionIds, setSelectedSubmissionIds] = useState<string[]>([]);
   const [selectedOverviewDateId, setSelectedOverviewDateId] = useState(scheduler.dateSlots[0]?.id ?? '');
   const [selectedOverviewSlotId, setSelectedOverviewSlotId] = useState('');
@@ -276,11 +278,19 @@ export function AdminPanel({
       }
 
       if (filterPreference === 'all-unavailable') {
-        return submission.allUnavailable;
+        if (!submission.allUnavailable) {
+          return false;
+        }
+      }
+
+      if (filterBuyIpad && submission.buyCurrentIpad !== filterBuyIpad) {
+        return false;
       }
 
       if (submission.allUnavailable) {
-        return !filterDate && !filterSlot && !filterPreference;
+        return filterPreference === 'all-unavailable'
+          ? !filterDate && !filterSlot
+          : !filterDate && !filterSlot && !filterPreference;
       }
 
       let entries = getPreferenceEntries(submission);
@@ -296,7 +306,7 @@ export function AdminPanel({
 
       return entries.length > 0 || (!filterDate && !filterSlot && !filterPreference);
     });
-  }, [filterDate, filterPreference, filterSlot, filterStatus, submissions, slotById]);
+  }, [filterDate, filterPreference, filterSlot, filterStatus, filterBuyIpad, submissions, slotById]);
 
   const totalSlotCapacity = dateTimeSlots.reduce((sum, slot) => sum + slot.maxBookings, 0);
   const remainingSlotCapacity = dateTimeSlots.reduce(
@@ -677,7 +687,7 @@ export function AdminPanel({
         {activeTab === 'submissions' && (
           <div className="space-y-6">
             <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700">Filter by date</label>
                   <select
@@ -723,6 +733,18 @@ export function AdminPanel({
                     <option value="2">Preference 2</option>
                     <option value="3">Preference 3</option>
                     <option value="all-unavailable">All unavailable</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">Buy current iPad</label>
+                  <select
+                    value={filterBuyIpad}
+                    onChange={(event) => setFilterBuyIpad(event.target.value as BuyIpadFilter)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="">All responses</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
                   </select>
                 </div>
                 <div>
@@ -806,6 +828,7 @@ export function AdminPanel({
                       <th className="px-3 py-2 font-semibold">Name</th>
                       <th className="px-3 py-2 font-semibold">Staff #</th>
                       <th className="px-3 py-2 font-semibold">Email</th>
+                      <th className="px-3 py-2 font-semibold">Buy iPad</th>
                       <th className="px-3 py-2 font-semibold">Status</th>
                       <th className="px-3 py-2 font-semibold">Preferred Dates</th>
                       <th className="px-3 py-2 font-semibold">Preferred Slots</th>
@@ -840,6 +863,7 @@ export function AdminPanel({
                           <td className="px-3 py-2 font-medium text-slate-800">{submission.name}</td>
                           <td className="px-3 py-2 text-slate-600">{submission.staffNumber}</td>
                           <td className="px-3 py-2 text-slate-600">{submission.email}</td>
+                          <td className="px-3 py-2 text-slate-600">{submission.buyCurrentIpad ? submission.buyCurrentIpad.toUpperCase() : '—'}</td>
                           <td className="px-3 py-2">
                             <span className={cn('rounded-full border px-2 py-0.5 text-xs font-semibold', status.tone)}>
                               {status.label}

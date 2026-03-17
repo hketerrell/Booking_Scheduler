@@ -24,6 +24,7 @@ export interface BookingSubmission {
   staffNumber: string;
   preferredDateIds: string[];
   preferences: string[]; // Top 3 date-time slot IDs
+  buyCurrentIpad?: 'yes' | 'no';
   furtherEnquiries?: string;
   allUnavailable?: boolean;
   unavailableReason?: string;

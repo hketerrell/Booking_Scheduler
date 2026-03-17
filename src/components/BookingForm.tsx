@@ -32,6 +32,7 @@ export function BookingForm({
   const [allUnavailable, setAllUnavailable] = useState(false);
   const [unavailableReason, setUnavailableReason] = useState('');
   const [alternateRequest, setAlternateRequest] = useState('');
+  const [buyCurrentIpad, setBuyCurrentIpad] = useState<'yes' | 'no' | ''>('');
   const [primaryDateId, setPrimaryDateId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,6 +56,7 @@ export function BookingForm({
         setAllUnavailable(draft.allUnavailable ?? false);
         setUnavailableReason(draft.unavailableReason ?? '');
         setAlternateRequest(draft.alternateRequest ?? '');
+        setBuyCurrentIpad(draft.buyCurrentIpad ?? '');
         setPrimaryDateId(draft.primaryDateId ?? restoredDateIds[0] ?? null);
       } catch {
         localStorage.removeItem(draftKey);
@@ -73,6 +75,7 @@ export function BookingForm({
       allUnavailable,
       unavailableReason,
       alternateRequest,
+      buyCurrentIpad,
       primaryDateId,
     };
     localStorage.setItem(draftKey, JSON.stringify(draft));
@@ -86,6 +89,7 @@ export function BookingForm({
     allUnavailable,
     unavailableReason,
     alternateRequest,
+    buyCurrentIpad,
   ]);
   const filteredSlots = useMemo(
     () => dateTimeSlots.filter((slot) => selectedDateIds.includes(slot.dateId)),
@@ -179,8 +183,12 @@ export function BookingForm({
       if (!alternateRequest.trim()) {
         newErrors.alternateRequest = 'Please provide a preferred date/time request';
       }
-    } else if (selectedSlots.length !== 3) {
-      newErrors.slots = 'Please select exactly 3 preferred time slots';
+    } else if (selectedSlots.length !== 1) {
+      newErrors.slots = 'Please select exactly 1 preferred time slot';
+    }
+
+    if (!buyCurrentIpad) {
+      newErrors.buyCurrentIpad = 'Please select whether you want to buy your current iPad';
     }
 
     setErrors(newErrors);
@@ -229,6 +237,7 @@ export function BookingForm({
       allUnavailable,
       unavailableReason: allUnavailable ? unavailableReason.trim() : undefined,
       alternateRequest: allUnavailable ? alternateRequest.trim() : undefined,
+      buyCurrentIpad: buyCurrentIpad || undefined,
     });
 
     localStorage.removeItem(draftKey);
@@ -261,6 +270,7 @@ export function BookingForm({
                   <p><span className="text-slate-500">Name:</span> <span className="font-medium">{name}</span></p>
                   <p><span className="text-slate-500">Email:</span> <span className="font-medium">{email}</span></p>
                   <p><span className="text-slate-500">Staff number:</span> <span className="font-medium">{staffNumber}</span></p>
+                  <p><span className="text-slate-500">Buy current iPad:</span> <span className="font-medium">{buyCurrentIpad === 'yes' ? 'Yes' : 'No'}</span></p>
                 </div>
               </div>
 
@@ -274,7 +284,7 @@ export function BookingForm({
                 </div>
               ) : (
                 <div className="bg-slate-50 rounded-xl p-4">
-                  <h3 className="font-semibold text-slate-700 mb-3">Your Top 3 Time Slot Preferences</h3>
+                  <h3 className="font-semibold text-slate-700 mb-3">Your Preferred Time Slot</h3>
                   <ol className="space-y-2">
                     {selectedSlotsData.map((slot, index) => (
                       <li key={slot.id} className="flex items-start gap-3">
@@ -347,7 +357,7 @@ export function BookingForm({
         </p>
         <div className="bg-slate-50 rounded-xl p-4 mb-6 text-left">
           <div>
-            <h3 className="font-semibold text-slate-700 mb-2">Your Top 3 Time Slot Preferences</h3>
+            <h3 className="font-semibold text-slate-700 mb-2">Your Preferred Time Slot</h3>
             <ol className="space-y-2">
               {submittedSlotsData.map((slot, index) => (
                 <li key={slot.id} className="flex items-start gap-2">
@@ -554,7 +564,7 @@ export function BookingForm({
               primaryDateId={primaryDateId}
               onSelectSlot={handleSlotSelect}
               onClearSelections={() => setSelectedSlots([])}
-              maxSelections={3}
+              maxSelections={1}
               preferenceLimit={preferenceLimit}
             />
           )}
@@ -563,6 +573,34 @@ export function BookingForm({
           )}
         </div>
       )}
+
+
+      <div className="pt-4 border-t border-slate-200 space-y-2">
+        <label className="block text-sm font-medium text-slate-700">
+          Do you want to buy your current iPad? <span className="text-red-500">*</span>
+        </label>
+        <div className="flex flex-wrap gap-4">
+          {(['yes', 'no'] as const).map((option) => (
+            <label key={option} className="inline-flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="radio"
+                name="buyCurrentIpad"
+                value={option}
+                checked={buyCurrentIpad === option}
+                onChange={(event) => {
+                  setBuyCurrentIpad(event.target.value as 'yes' | 'no');
+                  setErrors((prev) => ({ ...prev, buyCurrentIpad: '' }));
+                }}
+                className="h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="capitalize">{option}</span>
+            </label>
+          ))}
+        </div>
+        {errors.buyCurrentIpad && (
+          <p className="text-sm text-red-600">{errors.buyCurrentIpad}</p>
+        )}
+      </div>
 
       <div className="pt-4 border-t border-slate-200 space-y-2">
         <label htmlFor="enquiries" className="block text-sm font-medium text-slate-700">
