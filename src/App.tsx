@@ -372,7 +372,7 @@ export function App() {
                   <h2 className="text-lg font-semibold mb-1">How it works</h2>
                   <ul className="text-indigo-100 text-sm sm:text-base space-y-1">
                     <li>• Fill in your personal information</li>
-                    <li>• Select your <strong className="text-white">preferred dates</strong> and top 3 time slots</li>
+                    <li>• Select your <strong className="text-white">single preferred date</strong> and one preferred time slot</li>
                     <li>• Each time slot accepts <strong className="text-white">up to {activeScheduler.config.slotMaxBookings} booking requests</strong> during intake</li>
                     <li>• Bookings are assigned on a <strong className="text-white">first come, first reserved</strong> basis</li>
                     <li>• We will confirm your final booking by email</li>

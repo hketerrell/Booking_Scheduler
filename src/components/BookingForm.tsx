@@ -26,14 +26,13 @@ export function BookingForm({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [staffNumber, setStaffNumber] = useState('');
-  const [selectedDateIds, setSelectedDateIds] = useState<string[]>([]);
+  const [selectedDateId, setSelectedDateId] = useState<string | null>(null);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [furtherEnquiries, setFurtherEnquiries] = useState('');
   const [allUnavailable, setAllUnavailable] = useState(false);
   const [unavailableReason, setUnavailableReason] = useState('');
   const [alternateRequest, setAlternateRequest] = useState('');
   const [buyCurrentIpad, setBuyCurrentIpad] = useState<'yes' | 'no' | ''>('');
-  const [primaryDateId, setPrimaryDateId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -50,14 +49,15 @@ export function BookingForm({
         setEmail(draft.email ?? '');
         setStaffNumber(draft.staffNumber ?? '');
         const restoredDateIds = draft.selectedDateIds ?? [];
-        setSelectedDateIds(restoredDateIds);
+        const restoredPrimaryDateId = draft.selectedDateId ?? draft.primaryDateId ?? restoredDateIds[0] ?? null;
+        setSelectedDateId(restoredPrimaryDateId);
         setSelectedSlots(draft.selectedSlots ?? []);
         setFurtherEnquiries(draft.furtherEnquiries ?? '');
         setAllUnavailable(draft.allUnavailable ?? false);
         setUnavailableReason(draft.unavailableReason ?? '');
         setAlternateRequest(draft.alternateRequest ?? '');
         setBuyCurrentIpad(draft.buyCurrentIpad ?? '');
-        setPrimaryDateId(draft.primaryDateId ?? restoredDateIds[0] ?? null);
+
       } catch {
         localStorage.removeItem(draftKey);
       }
@@ -69,21 +69,21 @@ export function BookingForm({
       name,
       email,
       staffNumber,
-      selectedDateIds,
+      selectedDateIds: selectedDateId ? [selectedDateId] : [],
+      selectedDateId,
       selectedSlots,
       furtherEnquiries,
       allUnavailable,
       unavailableReason,
       alternateRequest,
       buyCurrentIpad,
-      primaryDateId,
     };
     localStorage.setItem(draftKey, JSON.stringify(draft));
   }, [
     name,
     email,
     staffNumber,
-    selectedDateIds,
+    selectedDateId,
     selectedSlots,
     furtherEnquiries,
     allUnavailable,
@@ -92,8 +92,8 @@ export function BookingForm({
     buyCurrentIpad,
   ]);
   const filteredSlots = useMemo(
-    () => dateTimeSlots.filter((slot) => selectedDateIds.includes(slot.dateId)),
-    [dateTimeSlots, selectedDateIds]
+    () => (selectedDateId ? dateTimeSlots.filter((slot) => slot.dateId === selectedDateId) : []),
+    [dateTimeSlots, selectedDateId]
   );
 
   const handleSlotSelect = (slotId: string) => {
@@ -111,7 +111,7 @@ export function BookingForm({
       if (prev.includes(slotId)) {
         return prev.filter((id) => id !== slotId);
       }
-      if (prev.length < 3) {
+      if (prev.length < 1) {
         return [...prev, slotId];
       }
       return prev;
@@ -119,14 +119,13 @@ export function BookingForm({
     setErrors((prev) => ({ ...prev, slots: '' }));
   };
 
-  const handleToggleDate = (dateId: string) => {
+  const handleSelectDate = (dateId: string) => {
     if (dateId === 'all-unavailable') {
       setAllUnavailable((prev) => {
         const next = !prev;
         if (next) {
-          setSelectedDateIds([]);
+          setSelectedDateId(null);
           setSelectedSlots([]);
-          setPrimaryDateId(null);
         }
         return next;
       });
@@ -135,20 +134,20 @@ export function BookingForm({
     }
 
     setAllUnavailable(false);
-    setSelectedDateIds((prev) => {
-      if (prev.includes(dateId)) {
-        const next = prev.filter((id) => id !== dateId);
+    setSelectedDateId((prev) => {
+      if (prev === dateId) {
         const slotsToRemove = dateTimeSlots
           .filter((slot) => slot.dateId === dateId)
           .map((slot) => slot.id);
         setSelectedSlots((current) => current.filter((id) => !slotsToRemove.includes(id)));
-        if (primaryDateId === dateId) {
-          setPrimaryDateId(next[0] ?? null);
-        }
-        return next;
+        return null;
       }
-      setPrimaryDateId(dateId);
-      return [...prev, dateId];
+
+      const slotsToRemove = dateTimeSlots
+        .filter((slot) => slot.dateId !== dateId)
+        .map((slot) => slot.id);
+      setSelectedSlots((current) => current.filter((id) => !slotsToRemove.includes(id)));
+      return dateId;
     });
     setErrors((prev) => ({ ...prev, dates: '' }));
   };
@@ -172,8 +171,8 @@ export function BookingForm({
       newErrors.staffNumber = 'Staff number must contain digits only';
     }
 
-    if (!allUnavailable && selectedDateIds.length === 0) {
-      newErrors.dates = 'Please select at least one preferred date or choose all unavailable';
+    if (!allUnavailable && !selectedDateId) {
+      newErrors.dates = 'Please select a preferred date or choose all unavailable';
     }
 
     if (allUnavailable) {
@@ -231,7 +230,7 @@ export function BookingForm({
       name: name.trim(),
       email: email.trim(),
       staffNumber: staffNumber.trim(),
-      preferredDateIds: selectedDateIds,
+      preferredDateIds: selectedDateId ? [selectedDateId] : [],
       preferences: selectedSlots,
       furtherEnquiries: furtherEnquiries.trim() || undefined,
       allUnavailable,
@@ -493,15 +492,15 @@ export function BookingForm({
       <div className="pt-4 border-t border-slate-200">
         <DateSlotSelector
           dateSlots={dateSlots}
-          selectedDateIds={selectedDateIds}
+          selectedDateId={selectedDateId}
           allUnavailable={allUnavailable}
-          onToggleDate={handleToggleDate}
+          onSelectDate={handleSelectDate}
         />
         {errors.dates && (
           <p className="mt-2 text-sm text-red-600">{errors.dates}</p>
         )}
         <p className="mt-2 text-xs text-slate-500">
-          Preferred date selection is required unless you select “All dates unavailable”.
+          A preferred date selection is required unless you select “All dates unavailable”.
         </p>
       </div>
 
@@ -552,16 +551,16 @@ export function BookingForm({
         </div>
       ) : (
         <div className="pt-4 border-t border-slate-200">
-          {selectedDateIds.length === 0 ? (
+          {!selectedDateId ? (
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-600">
-              Select at least one preferred date above to see the available time slots.
+              Select a preferred date above to see the available time slots.
             </div>
           ) : (
             <TimeSlotSelector
               timeSlots={filteredSlots}
               selectedSlots={selectedSlots}
-              selectedDateIds={selectedDateIds}
-              primaryDateId={primaryDateId}
+              selectedDateIds={selectedDateId ? [selectedDateId] : []}
+              primaryDateId={selectedDateId}
               onSelectSlot={handleSlotSelect}
               onClearSelections={() => setSelectedSlots([])}
               maxSelections={1}

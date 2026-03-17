@@ -3,28 +3,28 @@ import { cn } from '../utils/cn';
 
 interface DateSlotSelectorProps {
   dateSlots: DateSlot[];
-  selectedDateIds: string[];
+  selectedDateId: string | null;
   allUnavailable: boolean;
-  onToggleDate: (dateId: string) => void;
+  onSelectDate: (dateId: string) => void;
 }
 
 export function DateSlotSelector({
   dateSlots,
-  selectedDateIds,
+  selectedDateId,
   allUnavailable,
-  onToggleDate,
+  onSelectDate,
 }: DateSlotSelectorProps) {
   return (
     <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-slate-800">Select preferred date(s)</h3>
+      <h3 className="text-lg font-semibold text-slate-800">Select your preferred date</h3>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {dateSlots.map((slot) => {
-          const selected = selectedDateIds.includes(slot.id);
+          const selected = selectedDateId === slot.id;
           return (
             <button
               key={slot.id}
               type="button"
-              onClick={() => onToggleDate(slot.id)}
+              onClick={() => onSelectDate(slot.id)}
               className={cn(
                 'rounded-xl border px-4 py-3 text-left transition-colors',
                 selected
@@ -41,7 +41,7 @@ export function DateSlotSelector({
 
       <button
         type="button"
-        onClick={() => onToggleDate('all-unavailable')}
+        onClick={() => onSelectDate('all-unavailable')}
         className={cn(
           'rounded-xl border px-4 py-3 text-left w-full transition-colors',
           allUnavailable
