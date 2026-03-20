@@ -945,6 +945,7 @@ export function AdminPanel({
                       <th className="px-3 py-2 font-semibold">Preferred Dates</th>
                       <th className="px-3 py-2 font-semibold">Preferred Slots</th>
                       <th className="px-3 py-2 font-semibold">Assigned Slot</th>
+                      <th className="px-3 py-2 font-semibold">Further Request</th>
                       <th className="px-3 py-2 font-semibold">Actions</th>
                     </tr>
                   </thead>
@@ -983,9 +984,15 @@ export function AdminPanel({
                           </td>
                           <td className="px-3 py-2">
                             {submission.allUnavailable ? (
-                              <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs text-rose-700">
-                                All unavailable
-                              </span>
+                              <div className="space-y-2">
+                                <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs text-rose-700">
+                                  All unavailable
+                                </span>
+                                <div className="rounded-xl border border-rose-100 bg-rose-50/60 px-3 py-2 text-xs text-rose-700">
+                                  <div className="font-semibold text-rose-800">Alternate date/time</div>
+                                  <div className="mt-1">{submission.alternateRequest || 'Not provided'}</div>
+                                </div>
+                              </div>
                             ) : visibleDates.length > 0 ? (
                               <div className="flex flex-wrap gap-1">
                                 {visibleDates.map((date) => (
@@ -1054,6 +1061,15 @@ export function AdminPanel({
                               <span className="font-medium text-indigo-700">{assignedSlot.dateLabel} {assignedSlot.label}</span>
                             ) : (
                               <span className="text-xs text-slate-400">Not assigned</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2">
+                            {submission.furtherEnquiries ? (
+                              <div className="max-w-xs whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                                {submission.furtherEnquiries}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400">—</span>
                             )}
                           </td>
                           <td className="px-3 py-2">
