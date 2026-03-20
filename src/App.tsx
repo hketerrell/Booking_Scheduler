@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BookingForm } from './components/BookingForm';
 import { AdminPanel } from './components/AdminPanel';
 import { BookingState, BookingSubmission, Scheduler, SchedulerConfig } from './types';
@@ -81,6 +81,7 @@ const readCachedRemoteState = (): BookingState | null => {
 
 export function App() {
   const [state, setState] = useState<BookingState>(getInitialState);
+  const lastRemoteStateRef = useRef<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('booking');
   const [adminAuthorized, setAdminAuthorized] = useState(false);
   const [passcodeInput, setPasscodeInput] = useState('');
@@ -96,10 +97,14 @@ export function App() {
 
     try {
       const remoteState = await loadRemoteState();
+      const serializedRemoteState = JSON.stringify(remoteState);
+
       setState(remoteState);
       setRemoteReady(true);
       setIsUsingCachedState(false);
-      window.localStorage.setItem(REMOTE_STATE_CACHE_KEY, JSON.stringify(remoteState));
+      setRemoteError('');
+      lastRemoteStateRef.current = serializedRemoteState;
+      window.localStorage.setItem(REMOTE_STATE_CACHE_KEY, serializedRemoteState);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load remote data.';
       const cachedState = readCachedRemoteState();
@@ -128,10 +133,18 @@ export function App() {
       return;
     }
 
+    const serializedState = JSON.stringify(state);
+
+    if (lastRemoteStateRef.current === serializedState) {
+      return;
+    }
+
     saveRemoteState(state)
       .then(() => {
-        window.localStorage.setItem(REMOTE_STATE_CACHE_KEY, JSON.stringify(state));
+        lastRemoteStateRef.current = serializedState;
+        window.localStorage.setItem(REMOTE_STATE_CACHE_KEY, serializedState);
         setIsUsingCachedState(false);
+        setRemoteError('');
       })
       .catch((error) => {
         const message = error instanceof Error ? error.message : 'Failed to save remote data.';
