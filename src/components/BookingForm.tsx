@@ -166,9 +166,7 @@ export function BookingForm({
     }
 
     if (!staffNumber.trim()) {
-      newErrors.staffNumber = 'Staff number is required';
-    } else if (!/^\d+$/.test(staffNumber)) {
-      newErrors.staffNumber = 'Staff number must contain digits only';
+      newErrors.staffNumber = 'Please enter your full staff number';
     }
 
     if (!allUnavailable && !selectedDateId) {
@@ -462,17 +460,15 @@ export function BookingForm({
 
           <div>
             <label htmlFor="staffNumber" className="block text-sm font-medium text-slate-700 mb-1">
-              Staff Number <span className="text-red-500">*</span>
+              Full Staff Number <span className="text-red-500">*</span>
             </label>
+            <p className="mb-1 text-xs text-slate-500">Please enter your full staff number exactly as assigned.</p>
             <input
               type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
               id="staffNumber"
               value={staffNumber}
               onChange={(e) => {
-                const nextValue = e.target.value.replace(/\D/g, '');
-                setStaffNumber(nextValue);
+                setStaffNumber(e.target.value);
                 setErrors((prev) => ({ ...prev, staffNumber: '' }));
               }}
               className={cn(
@@ -480,7 +476,7 @@ export function BookingForm({
                 'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
                 errors.staffNumber ? 'border-red-300 bg-red-50' : 'border-slate-300'
               )}
-              placeholder="Numbers only"
+              placeholder="Enter your full staff number"
             />
             {errors.staffNumber && (
               <p className="mt-1 text-sm text-red-600">{errors.staffNumber}</p>
