@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BookingForm } from './components/BookingForm';
 import { AdminPanel } from './components/AdminPanel';
 import { BookingState, BookingSubmission, Scheduler, SchedulerConfig } from './types';
@@ -11,6 +11,8 @@ import { cn } from './utils/cn';
 import { isRemotePersistenceEnabled, loadRemoteState, saveRemoteState } from './data/remotePersistence';
 
 type ViewMode = 'booking' | 'admin';
+
+const REMOTE_STATE_CACHE_KEY = 'bookingRemoteStateCache';
 
 const buildSlotBookingCounts = (scheduler: Scheduler) => {
   return scheduler.submissions.reduce<Record<string, number>>((acc, submission) => {
@@ -59,6 +61,24 @@ const syncSchedulerAvailability = (scheduler: Scheduler): Scheduler => {
   };
 };
 
+const readCachedRemoteState = (): BookingState | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const cachedState = window.localStorage.getItem(REMOTE_STATE_CACHE_KEY);
+  if (!cachedState) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(cachedState) as BookingState;
+  } catch {
+    window.localStorage.removeItem(REMOTE_STATE_CACHE_KEY);
+    return null;
+  }
+};
+
 export function App() {
   const [state, setState] = useState<BookingState>(getInitialState);
   const [viewMode, setViewMode] = useState<ViewMode>('booking');
@@ -67,40 +87,56 @@ export function App() {
   const [passcodeError, setPasscodeError] = useState('');
   const [remoteReady, setRemoteReady] = useState(false);
   const [remoteError, setRemoteError] = useState('');
+  const [isUsingCachedState, setIsUsingCachedState] = useState(false);
+  const [isRetryingRemoteLoad, setIsRetryingRemoteLoad] = useState(false);
+
+  const loadState = useCallback(async () => {
+    setRemoteError('');
+    setIsRetryingRemoteLoad(true);
+
+    try {
+      const remoteState = await loadRemoteState();
+      setState(remoteState);
+      setRemoteReady(true);
+      setIsUsingCachedState(false);
+      window.localStorage.setItem(REMOTE_STATE_CACHE_KEY, JSON.stringify(remoteState));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load remote data.';
+      const cachedState = readCachedRemoteState();
+
+      if (cachedState) {
+        setState(cachedState);
+        setRemoteReady(true);
+        setIsUsingCachedState(true);
+        setRemoteError(`${message} Showing the last saved scheduler data instead.`);
+        return;
+      }
+
+      setRemoteReady(false);
+      setRemoteError(message);
+    } finally {
+      setIsRetryingRemoteLoad(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-
-    loadRemoteState()
-      .then((remoteState) => {
-        if (cancelled) {
-          return;
-        }
-        setState(remoteState);
-        setRemoteReady(true);
-      })
-      .catch((error) => {
-        if (cancelled) {
-          return;
-        }
-        const message = error instanceof Error ? error.message : 'Failed to load remote data.';
-        setRemoteError(message);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    void loadState();
+  }, [loadState]);
 
   useEffect(() => {
     if (!remoteReady) {
       return;
     }
 
-    saveRemoteState(state).catch((error) => {
-      const message = error instanceof Error ? error.message : 'Failed to save remote data.';
-      setRemoteError(message);
-    });
+    saveRemoteState(state)
+      .then(() => {
+        window.localStorage.setItem(REMOTE_STATE_CACHE_KEY, JSON.stringify(state));
+        setIsUsingCachedState(false);
+      })
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : 'Failed to save remote data.';
+        setRemoteError(message);
+      });
   }, [remoteReady, state]);
 
   const activeScheduler = useMemo(() => {
@@ -259,12 +295,27 @@ export function App() {
     );
   }
 
-  if (remoteError) {
+  if (remoteError && !remoteReady) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4">
-        <div className="max-w-md w-full rounded-2xl bg-white border border-red-200 shadow-sm p-6 space-y-3">
-          <h1 className="text-lg font-semibold text-red-700">Unable to load remote data</h1>
-          <p className="text-sm text-slate-600">{remoteError}</p>
+        <div className="max-w-md w-full rounded-2xl bg-white border border-red-200 shadow-sm p-6 space-y-4">
+          <div className="space-y-2">
+            <h1 className="text-lg font-semibold text-red-700">Unable to load remote data</h1>
+            <p className="text-sm text-slate-600">{remoteError}</p>
+            <p className="text-sm text-slate-500">
+              Please retry. If this continues, confirm the Cloudflare Worker and database are reachable.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              void loadState();
+            }}
+            disabled={isRetryingRemoteLoad}
+            className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
+          >
+            {isRetryingRemoteLoad ? 'Retrying...' : 'Retry loading'}
+          </button>
         </div>
       </div>
     );
@@ -295,6 +346,25 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50 to-purple-50">
+      {(remoteError || isUsingCachedState) && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-sm text-amber-900">
+          <div className="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              {remoteError || 'Showing cached scheduler data while the remote service reconnects.'}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                void loadState();
+              }}
+              disabled={isRetryingRemoteLoad}
+              className="inline-flex items-center justify-center rounded-lg border border-amber-300 bg-white px-3 py-1.5 font-medium text-amber-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isRetryingRemoteLoad ? 'Retrying...' : 'Retry sync'}
+            </button>
+          </div>
+        </div>
+      )}
       <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -348,7 +418,6 @@ export function App() {
           </div>
         </div>
       </header>
-
       <main className="max-w-6xl mx-auto px-4 py-8">
         {viewMode === 'booking' ? (
           <div className="max-w-3xl mx-auto space-y-6">
