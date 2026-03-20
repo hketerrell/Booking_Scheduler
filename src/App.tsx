@@ -88,7 +88,6 @@ export function App() {
   const [passcodeError, setPasscodeError] = useState('');
   const [remoteReady, setRemoteReady] = useState(false);
   const [remoteError, setRemoteError] = useState('');
-  const [isUsingCachedState, setIsUsingCachedState] = useState(false);
   const [isRetryingRemoteLoad, setIsRetryingRemoteLoad] = useState(false);
 
   const loadState = useCallback(async () => {
@@ -101,7 +100,6 @@ export function App() {
 
       setState(remoteState);
       setRemoteReady(true);
-      setIsUsingCachedState(false);
       setRemoteError('');
       lastRemoteStateRef.current = serializedRemoteState;
       window.localStorage.setItem(REMOTE_STATE_CACHE_KEY, serializedRemoteState);
@@ -112,7 +110,6 @@ export function App() {
       if (cachedState) {
         setState(cachedState);
         setRemoteReady(true);
-        setIsUsingCachedState(true);
         setRemoteError(`${message} Showing the last saved scheduler data instead.`);
         return;
       }
@@ -143,7 +140,6 @@ export function App() {
       .then(() => {
         lastRemoteStateRef.current = serializedState;
         window.localStorage.setItem(REMOTE_STATE_CACHE_KEY, serializedState);
-        setIsUsingCachedState(false);
         setRemoteError('');
       })
       .catch((error) => {
@@ -359,25 +355,6 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50 to-purple-50">
-      {(remoteError || isUsingCachedState) && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-sm text-amber-900">
-          <div className="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p>
-              {remoteError || 'Showing cached scheduler data while the remote service reconnects.'}
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                void loadState();
-              }}
-              disabled={isRetryingRemoteLoad}
-              className="inline-flex items-center justify-center rounded-lg border border-amber-300 bg-white px-3 py-1.5 font-medium text-amber-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isRetryingRemoteLoad ? 'Retrying...' : 'Retry sync'}
-            </button>
-          </div>
-        </div>
-      )}
       <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
