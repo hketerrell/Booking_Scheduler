@@ -4,6 +4,9 @@ import { TimeSlotSelector } from './TimeSlotSelector';
 import { DateSlotSelector } from './DateSlotSelector';
 import { cn } from '../utils/cn';
 
+const STAFF_NUMBER_PATTERN = /^HKE-\d{3,4}P$/;
+const STAFF_NUMBER_HINT = 'Use HKE-###P or HKE-####P, for example HKE-123P or HKE-1234P.';
+
 interface BookingFormProps {
   dateTimeSlots: DateTimeSlot[];
   dateSlots: DateSlot[];
@@ -165,10 +168,12 @@ export function BookingForm({
       newErrors.email = 'Please enter a valid email';
     }
 
-    if (!staffNumber.trim()) {
-      newErrors.staffNumber = 'Staff number is required';
-    } else if (!/^\d+$/.test(staffNumber)) {
-      newErrors.staffNumber = 'Staff number must contain digits only';
+    const normalizedStaffNumber = staffNumber.trim().toUpperCase();
+
+    if (!normalizedStaffNumber) {
+      newErrors.staffNumber = 'Please enter your staff number in HKE-###P or HKE-####P format.';
+    } else if (!STAFF_NUMBER_PATTERN.test(normalizedStaffNumber)) {
+      newErrors.staffNumber = 'Staff number format must be HKE-###P or HKE-####P.';
     }
 
     if (!allUnavailable && !selectedDateId) {
@@ -201,7 +206,7 @@ export function BookingForm({
 
     const normalizedName = name.trim().toLowerCase();
     const normalizedEmail = email.trim().toLowerCase();
-    const normalizedStaffNumber = staffNumber.trim();
+    const normalizedStaffNumber = staffNumber.trim().toUpperCase();
 
     const duplicate = submissions.some(
       (sub) =>
@@ -229,7 +234,7 @@ export function BookingForm({
     onSubmit({
       name: name.trim(),
       email: email.trim(),
-      staffNumber: staffNumber.trim(),
+      staffNumber: staffNumber.trim().toUpperCase(),
       preferredDateIds: selectedDateId ? [selectedDateId] : [],
       preferences: selectedSlots,
       furtherEnquiries: furtherEnquiries.trim() || undefined,
@@ -462,17 +467,15 @@ export function BookingForm({
 
           <div>
             <label htmlFor="staffNumber" className="block text-sm font-medium text-slate-700 mb-1">
-              Staff Number <span className="text-red-500">*</span>
+              Full Staff Number <span className="text-red-500">*</span>
             </label>
+            <p className="mb-1 text-xs text-slate-500">Please enter your staff number in this format: <span className="font-medium text-slate-700">HKE-###P</span> or <span className="font-medium text-slate-700">HKE-####P</span>.</p>
             <input
               type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
               id="staffNumber"
               value={staffNumber}
               onChange={(e) => {
-                const nextValue = e.target.value.replace(/\D/g, '');
-                setStaffNumber(nextValue);
+                setStaffNumber(e.target.value.toUpperCase());
                 setErrors((prev) => ({ ...prev, staffNumber: '' }));
               }}
               className={cn(
@@ -480,8 +483,9 @@ export function BookingForm({
                 'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
                 errors.staffNumber ? 'border-red-300 bg-red-50' : 'border-slate-300'
               )}
-              placeholder="Numbers only"
+              placeholder="HKE-123P or HKE-1234P"
             />
+            <p className="mt-1 text-xs text-slate-500">{STAFF_NUMBER_HINT}</p>
             {errors.staffNumber && (
               <p className="mt-1 text-sm text-red-600">{errors.staffNumber}</p>
             )}
